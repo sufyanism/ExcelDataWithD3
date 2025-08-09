@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Two Dataset Styled Responsive Chart</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    text-align: center;
+  }
+  #chartContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  svg {
+    width: 90%;
+    height: 90%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #fff;
+    border-radius: 8px;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: 700;
+    fill: #333;
+  }
+  .axis-label {
+    font-size: 14px;
+    fill: #555;
+    font-weight: 600;
+  }
+  /* Tooltip styles */
+  .tooltip {
+    position: absolute;
+    background-color: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+h1 {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  font-family: "Raleway", sans-serif;
+  font-weight: 300;
+  font-size: 32px;
+  color: #080808;
+  -webkit-transition: all 0.4s ease 0s;
+  -o-transition: all 0.4s ease 0s;
+  transition: all 0.4s ease 0s;
+}
+
+h1 span {
+  display: block;
+  font-size: 0.5em;
+  line-height: 1.3;
+}
+h1 em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* === HEADING STYLE #1 === */
+.one{
+    padding-bottom: 20px;
+}
+.one p {
+  font-size: 20px;
+}
+.one h1 {
+  text-align: center;
+  padding-bottom: 5px;
+}
+.one h1:before {
+  width: 28px;
+  height: 5px;
+  display: block;
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  margin-left: -14px;
+  background-color: #b80000;
+}
+.one h1:after {
+  width: 100px;
+  height: 1px;
+  display: block;
+  content: "";
+  position: relative;
+  margin-top: 25px;
+  left: 50%;
+  margin-left: -50px;
+  background-color: #b80000;
+}
+</style>
+</head>
+<body>
+    <div class="one">
+<h1> Representing Excel Data with Two Datasets  </h1>
+<p> zeba.academy </p>
+</div>
+  
+<div id="chartContainer">
+    
+</div>
+<div class="tooltip" style="opacity:0;"></div>
+<script>
+const container = d3.select('#chartContainer');
+let chartData = null;
+const tooltip = d3.select('.tooltip');
+
+function drawChart(data) {
+  container.selectAll('svg').remove();
+  const svg = container.append('svg');
+  const width = svg.node().getBoundingClientRect().width;
+  const height = svg.node().getBoundingClientRect().height;
+
+  const margin = { top: 70, right: 40, bottom: 100, left: 70 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const g = svg.append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const headers = data[0]; // e.g., ['Category', 'Dataset1', 'Dataset2']
+  const rows = data.slice(1);
+  const categories = rows.map(d => d[0]);
+  const datasetNames = headers.slice(1);
+
+  // Prepare data for grouped bars
+  const formattedData = rows.map(d => {
+    const obj = { category: d[0] };
+    headers.slice(1).forEach((h, i) => {
+      obj[h] = +d[i + 1];
+    });
+    return obj;
+  });
+
+  const x0 = d3.scaleBand()
+    .domain(categories)
+    .range([0, innerWidth])
+    .paddingInner(0.2);
+  const x1 = d3.scaleBand()
+    .domain(datasetNames)
+    .range([0, x0.bandwidth()])
+    .padding(0.1);
+  const yMax = d3.max(formattedData, d => d3.max(datasetNames, key => d[key]));
+  const yScale = d3.scaleLinear()
+    .domain([0, yMax]).nice()
+    .range([innerHeight, 0]);
+
+  // X axis
+  g.append('g')
+    .attr('transform', `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x0))
+    .selectAll('text')
+    .attr('transform', 'rotate(-25)')
+    .style('text-anchor', 'end')
+    .style('fill', '#333');
+
+  // Y axis
+  g.append('g')
+    .call(d3.axisLeft(yScale))
+    .selectAll('text')
+    .style('fill', '#555');
+
+  // Define colors for datasets
+  const colorScheme = d3.scaleOrdinal()
+    .domain(datasetNames)
+    .range(['#4facfe', '#00f2fe']);
+
+  // Draw grouped bars
+  g.selectAll('g.layer')
+    .data(formattedData)
+    .enter()
+    .append('g')
+    .attr('transform', d => `translate(${x0(d.category)},0)`)
+    .selectAll('rect')
+    .data(d => datasetNames.map(key => ({ key: key, value: d[key], category: d.category })))
+    .enter()
+    .append('rect')
+    .attr('x', d => x1(d.key))
+    .attr('y', d => yScale(d.value))
+    .attr('width', x1.bandwidth())
+    .attr('height', d => innerHeight - yScale(d.value))
+    .attr('fill', d => colorScheme(d.key))
+    .on('mouseover', function(event, d) {
+      d3.select(this).attr('opacity', 0.7);
+      tooltip.transition().duration(200).style('opacity', 1);
+      tooltip.html(`<strong>${d.category}</strong><br/>${d.key}: ${d.value}`)
+        .style('left', (event.pageX + 15) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mousemove', function(event) {
+      tooltip.style('left', (event.pageX + 15) + 'px')
+             .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mouseout', function() {
+      d3.select(this).attr('opacity', 1);
+      tooltip.transition().duration(200).style('opacity', 0);
+    });
+
+  // Add chart title
+  svg.append('text')
+    .attr('class', 'title')
+    .attr('x', width / 2)
+    .attr('y', margin.top / 2)
+
+  // X axis label
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('x', width / 2)
+    .attr('y', height - 20)
+    .style('text-anchor', 'middle')
+    .text(headers[0]);
+
+  // Y axis label
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', -height / 2)
+    .attr('y', 20)
+    .style('text-anchor', 'middle')
+    .text('Values');
+
+  // Legend
+  const legend = svg.append('g')
+    .attr('transform', `translate(${width - margin.right - 120}, ${margin.top})`);
+  datasetNames.forEach((name, i) => {
+    legend.append('rect')
+      .attr('x', 0)
+      .attr('y', i * 20)
+      .attr('width', 15)
+      .attr('height', 15)
+      .attr('fill', colorScheme(name));
+    legend.append('text')
+      .attr('x', 20)
+      .attr('y', i * 20 + 12)
+      .text(name)
+      .attr('font-size', '13px')
+      .attr('fill', '#333');
+  });
+}
+
+// Fetch and parse XLSX data
+function fetchData() {
+  fetch('Dummy.xlsx') // Replace with your XLSX URL
+    .then(res => res.arrayBuffer())
+    .then(ab => {
+      const workbook = XLSX.read(new Uint8Array(ab), { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      chartData = jsonData;
+      drawChart(chartData);
+    })
+    .catch(err => console.error(err));
+}
+
+fetchData();
+
+window.addEventListener('resize', () => {
+  if (chartData) {
+    drawChart(chartData);
+  }
+});
+</script>
+</body>
+</html>
