@@ -33,21 +33,6 @@ https://github.com/user-attachments/assets/b55f4e39-0dfd-426c-b477-e6650d038795
 
 </br>
 
-##  Table of Contents
-1. [About](#about)  
-2. [Features](#features)  
-3. [Tech Stack](#tech-stack)  
-4. [Getting Started](#getting-started)  
-   1. [Prerequisites](#prerequisites)  
-   2. [Setup & Run](#setup--run)  
-5. [Project Structure](#project-structure)  
-6. [API Endpoints](#api-endpoints)  
-7. [Demo](#demo)  
-8. [About](#about-me)
-9. [Learning Hub](#your-all-in-one-learning-hub)
-
-</br>
-
 ## About Me 
 ✨ I’m **Sufyan bin Uzayr**, an open-source developer passionate about building and sharing meaningful projects.
 You can learn more about me and my work at [sufyanism.com](https://sufyanism.com/) or connect with me on [Linkedin](https://www.linkedin.com/in/sufyanism)
